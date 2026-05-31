@@ -1,0 +1,24 @@
+name: Sync to Hugging Face Space
+on:
+  push:
+    branches: [main]          # adjust if your default branch is different
+  workflow_dispatch:          # lets you run it manually from the Actions tab
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      # 1️⃣ Checkout the repo (including LFS if you have large files)
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      # 2️⃣ Install the official HF sync action
+      - name: Sync to Hugging Face
+        uses: huggingface/hub-sync@v1
+        with:
+          repo: e-excove/H1-Test          # e.g. `johnsmith/H1-Test`
+          token: ${{ secrets.HF_TOKEN }}
+          # optional: if you want to force push (overwrites remote history)
+          # force: true
