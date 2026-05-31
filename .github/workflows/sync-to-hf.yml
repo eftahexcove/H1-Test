@@ -1,23 +1,34 @@
 name: Sync to Hugging Face Space
 on:
   push:
-    branches: [main]          # change if your default branch is different
-  workflow_dispatch:          # enables manual runs from the Actions tab
+    branches: [main]          # adjust if needed
+  workflow_dispatch:
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      # 1️⃣ Checkout the whole repo (including LFS for large files)
+      # 1️⃣ Checkout the repo (full history, LFS enabled)
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           lfs: true
 
-      # 2️⃣ Sync to Hugging Face using the official action (v2 is the current release)
-      - name: Sync to Hugging Face
-        uses: huggingface/hub-sync@v2          # <-- note the **v2** tag
-        with:
-          repo: <YOUR_HF_USERNAME>/H1-Test      # e.g. johnsmith/H1-Test
-          token: ${{ secrets.HF_TOKEN }}
-          # force: true          # (optional) force‑push to overwrite history
+      # 2️⃣ Set up Git config – required for the push
+      - name: Set up Git
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+      # 3️⃣ Push the current commit to the Hugging Face Space via HTTPS
+      - name: Push to Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          # Build the remote URL that includes the token for authentication
+          HF_REPO="<YOUR_HF_USERNAME>/H1-Test"
+          REMOTE_URL="https://${{ secrets.HF_TOKEN }}@huggingface.co/spaces/${HF_REPO}"
+          # Add the remote (overwrites if it already exists)
+          git remote add hf "${REMOTE_URL}" || git remote set-url hf "${REMOTE_URL}"
+          # Force‑push the current branch to the remote Space repo
+          git push -f hf HEAD:main
